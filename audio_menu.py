@@ -1,55 +1,45 @@
-def get_available_audios():
-    return {
-        1: "Feid",
-        2: "Michael jackson",
-        3: "Diomedez diaz",
-        4: "Reggaeton",
-        5: "vallenato",
-        6: "Percusión",
-        7: "Bajo",
-        8: "Guitarra electrica",
-        9: "Sin audio"
-    }
+import os
 
-def select_audios():
-    audio_files = [
-        'sounds/vocals/feid.wav',
-        'sounds/vocals/michael.wav',
-        'sounds/vocals/diomedez.wav',
-        'sounds/melody/spot.wav',
-        'sounds/melody/vallenato.wav',
-        'sounds/instruments/01_Drums.wav',
-        'sounds/instruments/02_Bass.wav',
-        'sounds/instruments/03_Electric_Left.wav'
-    ]
+def find_audio_files(root_folder, extensions=('.wav')):
+    audio_files = []
+    for dirpath, _, filenames in os.walk(root_folder):
+        for filename in filenames:
+            if filename.lower().endswith(extensions):
+                audio_files.append(os.path.join(dirpath, filename))
+    return audio_files
 
-    available_audios = get_available_audios()
-    print("\n=== Opciones de audio disponibles ===")
-    for key, val in available_audios.items():
-        print(f"{key}: {val}")
+def select_audios(max_tracks=5):
+    audio_files = find_audio_files('sounds')
+
+    if not audio_files:
+        print("No se encontraron archivos de audio en la carpeta 'sounds'.")
+        return []
+
+    print("\n=== Archivos de audio encontrados ===")
+    for idx, filepath in enumerate(audio_files, 1):
+        print(f"{idx}: {os.path.relpath(filepath, 'sounds')}")
+    print("0: Sin audio") 
 
     selections = []
-    while len(selections) < 5:
-        try:
-            idx = int(input(f"\nSeleccione el número del audio #{len(selections)+1}: "))
-            if idx < 1 or idx > 9:
-                print("Opción inválida. Intente de nuevo.")
-                continue
-            if idx in selections:
-                print("Ya seleccionó este audio. Elija otro.")
-                continue
-            selections.append(idx)
-        except ValueError:
-            print("Entrada no válida. Debe ser un número.")
-
-    selected_files = []
-    for idx in selections:
-        if idx == 9:
-            selected_files.append(None)
-        else:
-            selected_files.append(audio_files[idx - 1])
+    for n in range(max_tracks):
+        while True:
+            try:
+                idx = int(input(f"\nSeleccione el número del audio para el canal #{n+1} (0 para Sin audio): "))
+                if idx == 0:
+                    # Rellena el resto con None y termina
+                    selections.extend([None] * (max_tracks - len(selections)))
+                    break
+                if 1 <= idx <= len(audio_files):
+                    selections.append(audio_files[idx - 1])
+                    break
+                else:
+                    print("Opción inválida. Intente de nuevo.")
+            except ValueError:
+                print("Entrada no válida. Debe ser un número.")
+        if len(selections) == max_tracks:
+            break
 
     print("\nArchivos seleccionados:")
-    for f in selected_files:
-        print(f)
-    return selected_files
+    for f in selections:
+        print(f if f is not None else "Sin audio")
+    return selections

@@ -1,3 +1,5 @@
+import os
+
 def get_available_filters():
     return {
         0: "Sin filtro",
@@ -14,23 +16,26 @@ def get_available_filters():
 
 def select_filters(audio_files):
     available_filters = get_available_filters()
-    print("\n=== Opciones de filtro disponibles ===")
-    for key, val in available_filters.items():
-        print(f"{key}: {val}")
+    filters = []
+    print("\n=== Filtros disponibles ===")
+    for idx in sorted(available_filters):
+        print(f"{idx}: {available_filters[idx]}")
 
-    selections = []
-    for idx, file in enumerate(audio_files):
-        print(f"\nAudio {idx + 1}: {file}")
-        for key, val in available_filters.items():
-            print(f"  {key}: {val}")
+    for i, file in enumerate(audio_files):
+        if file is None:
+            filters.append(0)
+            continue
+        base_name = os.path.basename(file)
+        print(f"\nSelecciona un filtro para '{base_name}':")
         while True:
             try:
-                selected = int(input(f"Seleccione el filtro para '{file}' (número): "))
-                if selected in available_filters:
-                    selections.append(selected)
+                choice = int(input("Ingresa el número del filtro: "))
+                if choice in available_filters:
+                    filters.append(choice)
+                    print(f"Seleccionado: {available_filters[choice]}")
                     break
                 else:
-                    print("Opción inválida.")
-            except:
-                print("Ingrese un número válido.")
-    return selections
+                    print("Opción no válida. Intente de nuevo.")
+            except ValueError:
+                print("Por favor ingresa un número válido.")
+    return filters

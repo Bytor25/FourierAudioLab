@@ -1,6 +1,7 @@
 import audio_filters as AF
 import filter_audio_config as FAC
 import numpy as np
+import audio_equalizer_FFT as AEF
 
 def apply_filter(audio, rate, filter_option):
     if filter_option == 1:
@@ -30,15 +31,15 @@ def apply_filter(audio, rate, filter_option):
         freq = FAC.alienEffectConfiguration()
         return AF.alien_effect(audio, rate, freq)
     else:
+        print("Filtro no implementado, devolviendo audio original.")
         return audio
 
 def mix_audios(audios):
-    
-    weights = [0.7, 0.2, 0.1, 0.1, 0.1][:len(audios)]
+    n = len(audios)
+    weights = np.ones(n) / n
     min_length = min(map(len, audios))
     weighted_audios = [a[:min_length] * w for a, w in zip(audios, weights)]
     fft_list = [np.fft.fft(a) for a in weighted_audios]
     mixed_fft = sum(fft_list)
     mixed_audio = np.fft.ifft(mixed_fft).real
-    mixed_audio /= np.max(np.abs(mixed_audio))
-    return mixed_audio
+    return AF.normalize(mixed_audio)

@@ -7,28 +7,31 @@ def normalize(audio):
     return audio / max_val
 
 def delay(audio, rate, delay_time, decay):
-    delay_samples = int(delay_time*rate)
+    delay_samples = int(delay_time * rate)
     output = np.copy(audio)
-    for i in range(delay_samples, len(audio)):
-        output[i] += decay*audio[i-delay_samples]
+    if delay_samples < len(audio):
+        output[delay_samples:] += decay * audio[:-delay_samples]
     return normalize(output)
 
 def reverb(audio, rate, delay_time, decay, repeats):
     output = np.copy(audio)
     for r in range(1, repeats):
         delay_samples = int(delay_time * r * rate)
-        if delay_samples >= len(audio):
+        if delay_samples < len(audio):
+            output[delay_samples:] += (decay ** r) * audio[:-delay_samples]
+        else:
             break
-        output[delay_samples:] += (decay ** r) * audio[:-delay_samples]
     return normalize(output)
 
 def chorus(audio, rate, depth, rate_mod):
+    n = len(audio)
     output = np.copy(audio)
-    mod = (np.sin(2 * np.pi * rate_mod * np.arange(len(audio)) / rate) + 1) / 2
-    mod = (mod * depth * rate).astype(int)
-    for i in range(len(audio)):
-        idx = i - mod[i] if i - mod[i] >= 0 else 0
-        output[i] += 0.5 * audio[idx]
+    t = np.arange(n)
+    mod = (np.sin(2 * np.pi * rate_mod * t / rate) + 1) / 2
+    mod_samples = (mod * depth * rate).astype(int)
+    idxs = np.arange(n) - mod_samples
+    idxs = np.clip(idxs, 0, n-1)
+    output += 0.5 * audio[idxs]
     return normalize(output)
 
 def reverse(audio):
@@ -37,19 +40,19 @@ def reverse(audio):
 def flanger(audio, rate, max_delay, depth, rate_mod):
     n = len(audio)
     output = np.copy(audio)
-    mod = (np.sin(2 * np.pi * rate_mod * np.arange(n) / rate) + 1) / 2
+    t = np.arange(n)
+    mod = (np.sin(2 * np.pi * rate_mod * t / rate) + 1) / 2
     delay_samples = (mod * max_delay * rate).astype(int)
-    for i in range(n):
-        idx = i - delay_samples[i]
-        if idx >= 0:
-            output[i] += depth * audio[idx]
+    idxs = np.arange(n) - delay_samples
+    idxs = np.clip(idxs, 0, n-1)
+    output += depth * audio[idxs]
     return normalize(output)
 
 def compressor(audio, threshold, ratio):
     output = np.copy(audio)
-    mask = np.abs(audio) > threshold
-    output[mask] = np.sign(audio[mask]) * (
-        threshold + (np.abs(audio[mask]) - threshold) / ratio
+    mask = np.abs(output) > threshold
+    output[mask] = np.sign(output[mask]) * (
+        threshold + (np.abs(output[mask]) - threshold) / ratio
     )
     return normalize(output)
 
