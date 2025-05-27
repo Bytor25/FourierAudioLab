@@ -6,7 +6,7 @@ import audio_graph as AG
 import os
 import folder_managenment as FM
 import audio_menu as AM
-import audio_equalizer_FFT as AEQ  # Importa tu ecualizador FFT
+import audio_equalizer_FFT as AEQ 
 
 gains_db = [3, 2, 1, 0, -1, -1, 0, 1, 2, 3]
 
@@ -14,12 +14,14 @@ FM.folder_existence('filtered_audios')
 FM.folder_existence('output_audio')
 FM.clear_folder('filtered_audios')
 
+# Seleccionar los audios a 
 audio_files = AM.select_audios()
 
 audios = []
 audio_names = []
 rate = None
 
+# Obtener tasa de muestreo(rate) y volver el audio mono de ser necesario
 for file in audio_files:
     if file is None:
         audios.append(None)
@@ -27,6 +29,7 @@ for file in audio_files:
         continue 
     audio, sr = sf.read(file)
     audio = AC.ensure_mono(audio)
+    audio = MX.AF.normalize(audio)
     if rate is None:
         rate = sr
     audios.append(audio)
@@ -51,9 +54,8 @@ for audio_file, audio, filter_idx in zip(audio_files, audios, filters):
     if audio_file is None or audio is None:
         filtered_audios.append(None)
         continue 
-    # Aplica el filtro seleccionado
     filtered_audio = MX.apply_filter(audio, rate, filter_idx)
-    # Aplica el ecualizador FFT de 10 bandas
+
     filtered_audio = AEQ.equalize_fft(filtered_audio, rate, gains_db)
     filtered_audios.append(filtered_audio)
     filter_name = AFM.get_available_filters()[filter_idx].replace(" ", "_").lower()
@@ -63,7 +65,7 @@ for audio_file, audio, filter_idx in zip(audio_files, audios, filters):
     sf.write(output_path, filtered_audio, rate)
     print(f"Guardado: {output_path}")
 
-# Mezclar los audios originales y filtrados/ecualizados (sin None)
+# Mezclar los audios originales y filtrados/ecualizados
 audios_valid = [a for a in audios if a is not None]
 filtered_valid = [a for a in filtered_audios if a is not None]
 
@@ -74,10 +76,8 @@ if mixed_audio_after is not None:
     sf.write('output_audio/mixed_audio.wav', mixed_audio_after, rate)
 
 # Graficar resultados incluyendo los nombres de los filtros usados
-AG.graph_audios_and_frequencies_before_after(
-    audios_before=audios,
+AG.graph_audios_and_frequencies_after(
     audios_after=filtered_audios,
-    mix_before=mixed_audio_before,
     mix_after=mixed_audio_after,
     audio_names=audio_names,
     filters_used=filter_names,

@@ -26,7 +26,6 @@ def select_audios(max_tracks=5):
             try:
                 idx = int(input(f"\nSeleccione el número del audio para el canal #{n+1} (0 para Sin audio): "))
                 if idx == 0:
-                    # Rellena el resto con None y termina
                     selections.extend([None] * (max_tracks - len(selections)))
                     break
                 if 1 <= idx <= len(audio_files):
